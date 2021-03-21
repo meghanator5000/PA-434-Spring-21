@@ -1,0 +1,208 @@
+---
+title: "434 Homework 10"
+author: "Meghan Mokate"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: yes
+    theme: simplex
+---
+
+```{r warning = F, message = F, echo = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment #10
+
+This analysis looks into diversity levels and tuition costs at different colleges using a heatmap, a lollipop chart, and a Cleveland dot chart.
+
+First, I pull in the libraries I need and upload my data.
+```{r warning = F, message = F, results = 'hide'}
+library(tidyverse)
+library(rcartocolor)
+library(extrafont) 
+
+tuesdata <- tidytuesdayR::tt_load('2020-03-10')
+tuition_cost <- tuesdata$tuition_cost
+diversity_school <- tuesdata$diversity_school
+```
+
+## Create a Theme
+
+I create a theme to assign to all three of my graphs so that they look uniform. I name my theme "mokate_theme".
+
+1. I like the look of the minimal theme, so I start with that.
+2. I set my font style to Georgia for all text.
+3. I make the title text bold, size 16, and a dark purple color.
+4. I make the subtitle text italics, size 14, and a dark pink color.
+5. I make the axis titles text bold, size 14, and a dark purple color.
+6. I make the axis label text size 12 and a dark pink color.
+7. I specify that I do not want the axis lines to be on my graphs.
+8. I specify that I do not want any axis ticks.
+9. I set the x axis labels to show vertically so that they do not overlap one another.
+10. I make the legend title text size 12, bold, and a dark purple color.
+11. I make the legend label text size 12 a dark pink color.
+12. I make the plot caption a dark pink color and set the size to 10.
+```{r warning = F, message = F}
+mokate_theme <-
+  theme_minimal() + 
+  theme(
+    text = element_text(family = "Georgia"), 
+    plot.title = element_text(face = "bold", size = 16, color = "#60047A"), 
+    plot.subtitle = element_text(face = "italic", size = 14, color = "#9C0F5F"), 
+    axis.title = element_text(size = 14, face = "bold", color = "#60047A"), 
+    axis.text = element_text(size = 12, color = "#9C0F5F"), 
+    axis.line = element_blank(), 
+    axis.ticks = element_blank(), 
+    axis.text.x = element_text(angle = 90), 
+    legend.title = element_text(size = 12, face = "bold", color = "#60047A"), 
+    legend.text = element_text(size = 12, color = "#9C0F5F"), 
+    plot.caption = element_text(color = "#9C0F5F", size = 10)) 
+```
+
+## Create a Heatmap
+
+I create a heatmap to show average in-state tuition costs by state and school type.
+
+1. I want to show my values by state and school type, so I group them.
+2. I take an average of in state tuition since this is the metric I care about and I remove any nulls.
+3. I set the type column as a factor.
+4. I create a plot.
+5. I use geom_tile to order type from lowest to highest avg_in_state_tuition on the heat map for the x axis.
+6. I specify that state is my y axis.
+7. I specify that the shades of the heat map will be determined by the value of average in state tuition.
+8. I want the y axis of state to be in alphabetical order, with A at the top, so I use scale_y_discrete to sort this.
+9. I set the theme I created above, mokate_theme.
+10. I choose a color pallet that is visually appealing and matched my theme.
+11. I give the graph a title, a subtitle, x and y axis titles, legend title, and a caption.
+12. I view my heatmap.
+```{r warning = F, message = F, fig.width=10, fig.height=10}
+tuition_cost_plot <- tuition_cost %>%
+  group_by(state, type) %>% 
+  summarize(avg_in_state_tuition = mean(in_state_tuition, na.rm = TRUE)) %>% 
+  mutate(type = as_factor(type)) %>% 
+  ggplot() + 
+  geom_tile(aes(x = fct_reorder(type, avg_in_state_tuition, .desc = FALSE), 
+                 y = state, 
+                 fill = avg_in_state_tuition)) + 
+  scale_y_discrete(limits = rev((unique(sort(tuition_cost$state))))) + 
+  mokate_theme + 
+  scale_fill_carto_c(palette = 3, direction = 1) + 
+  labs(title = "In-State Tuition by State and School Type", 
+       subtitle = "Shows Average In-State Tuition for each State and School Type", 
+       x = "School Type", 
+       y = "State", 
+       fill = "Average In-State Tuition", 
+       caption = "Data come from the Chronicle of Higher Education") 
+tuition_cost_plot 
+```
+
+## Create a Lollipop Graph
+
+I create a lollipop graph to show the percentage of Non-Resident Foreign students across Illinois 4-year institutions.
+
+1. I left join with tuition cost as x and diversity school as y.
+2. I filter for only four year colleges and the state of Illinois. Then, I filter so that only observations with total enrollment greater than the mean for 4 year colleges in Illinois remain.
+3. I filter so that I am only looking at the proportion of Non-Resident Foreign students for my graph.
+4. I create a column to calculate percentage of non-resident foreign students compared to total students and change name to be a factor.
+5. I select institution name for the y axis and order it so that the largest percentage value is first and the values decrease from there.
+6. I set yend equal to y.
+7. I set x equal to 0, since this is where I want my segment to start.
+8. I set xend equal to percent_enrollment, since this is where I want my segment to end.
+9. I change the limits of the y axis so that my geom_text will be able to fit on the graph more neatly.
+10. I set x equal to name.
+11. I set x equal to percent_enrollment.
+12. I set the color of the dot to be the same pink in the theme I created earlier.
+13. I make the dots bigger so that they are more clear.
+14. I set the theme I created above, mokate_theme.
+15. I specify that the labels should present percent_enrollment value as a percentage with two decimal points.
+16. I add in labels for my data.
+17. I want my labels to be size 4.
+18. I position the labels.
+19. I give the graph a title, a subtitle, x and y axis titles, legend title, and a caption.
+20. I view my lollipop graph.
+```{r warning = F, message = F, fig.width=13, fig.height=10}
+diversity_school_plot <- 
+  left_join(tuition_cost, diversity_school) %>% 
+  filter(degree_length == "4 Year"& 
+           state == "Illinois", 
+         total_enrollment > (mean(total_enrollment, na.rm = T)), 
+         category == "Non-Resident Foreign") %>% 
+  mutate(percent_enrollment = (enrollment / total_enrollment), name = as_factor(name)) %>% 
+  ggplot() +
+  geom_segment(aes(x = 0, 
+                   xend = percent_enrollment, 
+                   y = fct_reorder(name, percent_enrollment, .desc = TRUE), 
+                   yend = name)) + 
+  xlim(0, .55) + 
+  geom_point(aes(x = percent_enrollment, 
+                 y = name), 
+             color = "#9C0F5F", 
+             size = 5) + 
+  mokate_theme + 
+  geom_text(aes(x = percent_enrollment, 
+                y = name, 
+                label = sprintf("%1.2f%%", 100*percent_enrollment)), 
+            size = 4, 
+            hjust = -.3) + 
+  labs(title = "Percentage of Non-Resident Foreign Students across Illinois 4-Year Institutions", 
+       subtitle = "Only shows 4-year institutions in Illinois that had above average enrollment", 
+       x = "Institution", 
+       y = "Percentage of Non-Resident Foreign Students", 
+       caption = "Data come from the Chronicle of Higher Education") 
+diversity_school_plot 
+```
+
+## Create a Cleveland Dot Graph
+
+I create a graph to show the gap in enrollment between two groups, women and non-women, across Illinois 4-year institutions.
+
+1. I left join with tuition cost as x and diversity school as y.
+2. I filter for only four year colleges and the state of Illinois. Then, I filter so that only observations with total enrollment greater than the mean for 4 year colleges in Illinois remain.
+3. I filter so that I am only looking at the proportion of women students for my graph.
+4. I create columns that show the percent of women and non-women by total students.
+5. I chose to say non-women instead of men to be more gender-inclusive.
+6. I pivot Women and Non-Women columns to be longer, so that there is a category column and an enrollment column.
+7. I will use the category column for color on the graph.
+8. I will use this enrollment for the x axis on the graph.
+9. I select only columns I care about keeping for my graph.
+10. I arrange in order of category then enrollment, this is so that I can sort name in order of appearance on my graph and get the order I want. 
+11. I mutate the name column so that it is ordered by appearance.
+12. I connect dots with a line to create Cleveland Dot Graph.
+13. I color coded for gender and make the dot sizes bigger and change their colors to match my theme.
+14. I set my theme.
+15. I give the graph a title, a subtitle, x and y axis titles, legend title, and a caption.
+16. I view my Cleveland dot graph.
+```{r warning = F, message = F, fig.width=12.5, fig.height=10}
+cleveland_dot_graph <- 
+  left_join(tuition_cost, diversity_school) %>% 
+  filter(degree_length == "4 Year"& 
+           state == "Illinois", 
+         total_enrollment > (mean(total_enrollment, na.rm = T)),
+        category == "Women") %>% 
+  mutate(`Non-Women` = ((total_enrollment - enrollment)/total_enrollment), `Women` = enrollment/total_enrollment) %>% 
+  pivot_longer(
+    c(`Women`, `Non-Women`), 
+    names_to = "Category", 
+    values_to = "Enrollment") %>% 
+  select(name, Category, Enrollment) %>% 
+  arrange(Category, Enrollment) %>% 
+  mutate(name = fct_inorder(name)) %>%
+  ggplot() +
+  geom_line(aes(x = Enrollment, 
+                y = name)) + # y axis
+  geom_point(aes(x = Enrollment, # x axis
+             y = fct_inorder(name), 
+             color = Category), 
+             size = 5) + 
+  scale_color_manual(values = c("Women" = "#60047A", "Non-Women" = "#9C0F5F")) + 
+  mokate_theme + 
+  labs(title = "Percentages of Women and Non-Women across Illinois 4-Year Institutions", 
+       subtitle = "Only shows 4-year institutions in Illinois that had above average enrollment", 
+       x = "Percentages of Women and Non-Women", 
+       y = "Institution", 
+       caption = "Data come from the Chronicle of Higher Education") 
+cleveland_dot_graph  
+```
