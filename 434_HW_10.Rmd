@@ -149,8 +149,8 @@ diversity_school_plot <-
             hjust = -.3) + 
   labs(title = "Percentage of Non-Resident Foreign Students across Illinois 4-Year Institutions", 
        subtitle = "Only shows 4-year institutions in Illinois that had above average enrollment", 
-       x = "Institution", 
-       y = "Percentage of Non-Resident Foreign Students", 
+       y = "Institution", 
+       x = "Percentage of Non-Resident Foreign Students", 
        caption = "Data come from the Chronicle of Higher Education") 
 diversity_school_plot 
 ```
