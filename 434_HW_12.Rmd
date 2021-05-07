@@ -1,0 +1,239 @@
+---
+title: "434_HW_12"
+author: "Meghan Mokate"
+date: "4/9/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load necessary packages
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+## Load data and view details
+
+```{r}
+class(state.name)
+class(sentences)
+
+length(state.name)
+length(sentences)
+```
+
+# Part 1
+
+## 1. Extract the following states: Arizona, California, Illinois, Oregon
+
+```{r}
+str_subset(state.name, "Arizona|California|Illinois|Oregon") 
+# use the | as an 'or' reference for each of the four states that I want to subset
+```
+
+## 2. Extract all states that begin with the letter a. Use both str_subset() and str_extract() to see how the syntax differs. In both cases, extract the full name of all the states.
+
+```{r}
+str_subset(state.name, "^A") 
+# will return all values that begin with the letter A
+
+str_extract(state.name, "^A.*")
+# without the '.*' included, will only return the 
+#beginning A and not the rest of the string value. Adding these in tells str to 
+#return the entire string
+```
+
+## 3. Extract all states whose names finish with a OR e.
+
+```{r}
+str_subset(state.name, "[ae]$") 
+# search for a or e then use $ to identify that these need 
+#to be the last values of the string
+```
+
+## 4. Count how many state names are composed of two words (e.g. North Dakota)
+
+```{r}
+str_subset(state.name, "\\s") 
+# shows the state names that are two words by identifying spaces
+sum(str_count(state.name, "\\s")) 
+# 10 states
+# can use this since states with two words will have one space and with none will 
+# have 0 spaces, so a sum of the count of spaces is effective
+```
+
+##5. Extract all states that contain at least one of these letters: n, t, w, c at any position within the name
+
+```{r}
+str_subset(state.name, "[ntwcNTWC]") 
+# check for each of these letters
+# include capital letters to ensure states that have the letters capitalized are included
+```
+
+## 6. Count how many states do not contain any one of these letters at any position: w, z, y
+
+```{r}
+sum(str_detect(state.name, "[WZYwzy]", negate = TRUE)) 
+# check for each of these letters
+# include capital letters to ensure states that don't have the letters capitalized are included
+# negate specifies that I want the ones who do not contain
+
+# 35 states
+```
+
+## 7. Extract all states that contain at least one of these letters: c or i. Exclude the initial letters from your count (e.g., do not include Colorado).
+
+```{r}
+str_subset(state.name, "[ci]") 
+# check for each of these letters, excluding capitals
+```
+
+## 8. Identify which states are exactly 6-letter long (DO NOT use str_length here!!) AND states that are at least 6-letter long
+
+```{r}
+str_subset(state.name, "^.{6}$") 
+# identify beginning of string, then a wildcard for 6 values long, then then end of the string
+
+str_subset(state.name, ".{6,}") 
+# look for states that are at least 6 letters long using {}
+```
+
+## 9. Create a regular expression that will match any string in state.name vector
+
+```{r}
+str_subset(state.name, "[A-Z][a-z]")
+# all strings begin with a capital letter then have a lower case letter
+```
+
+## 10. Find all states that start with two consonants.
+
+```{r}
+str_subset(state.name, "^[BCDFGHJKLMNPQRSTVWXZ][bcdfghjklmnpqrstvwxz]") 
+# start with the ^ to indicate the start, then reference capital consonants as
+# the first letter, then lower case consonants as the second letter
+```
+
+## 11. Find all states that have two or more vowels in a row.
+
+```{r}
+str_subset(state.name, "[AEIOUaeiou][aeiou]") 
+# for the first group, allow for capital or lower case vowels to be identified 
+# in case a value had two vowels with one being the first letter
+# then for the second group, we only have to worry about lower case
+```
+
+## 12. List the states that start with a vowel and end with a consonant
+
+```{r}
+str_subset(state.name, "^[AEIOU].*[bcdfghjklmnpqrstvwxz]$") 
+# all states start with capital letters, so reference capital vowels using ^ to 
+# indicate the beginning
+# use the .* to separate beginning and end, allowing for any values between
+# all states end with lowercase letters, so reference lowercase consonants 
+#using $ to indicate the end
+```
+
+# Part 2: Create a few new columns to store the following information. Use dplyr functions, not the dollar sign framework.
+
+## Load necessary data
+
+```{r}
+class(sentences)
+length(sentences)
+
+sentences_tbl <- as_tibble(sentences)
+sentences_tbl
+```
+
+## 1. The number of letters in each sentence. What is the average number of letters across sentences?
+
+```{r}
+sentences_tbl_1 <- sentences_tbl %>%
+  mutate(letter_count = str_count(value, "[A-Za-z]"))
+# specify that the str_count should only count for letters
+
+sentences_tbl_1
+
+sentences_tbl_1 %>%
+  summarise(avg_count = mean(letter_count)) 
+# create a new column to find the average number of letters across sentences 
+# (not added to the dataset)
+# 31.32083 letters
+
+```
+
+## 2. A dummy variable equal to 1 if the sentence contains a word ending with “ing”, and 0 otherwise. Note that words not sentences should end in ing! How many words with ing in the dataset?
+
+```{r}
+sentences_tbl_2 <- sentences_tbl_1 %>%
+  mutate(end_ing = ifelse(str_detect(value, "ing\\b"), 1, 0))
+# looks for words that end in ing by including \\b after the word
+
+sentences_tbl_2
+
+sentences_tbl_2 %>%
+  mutate(count_ing_end = str_count(value, "ing\\b")) %>%
+  summarise(count = sum(count_ing_end)) 
+# create a column to count the words ending in ing, and then count these 
+# (not added to dataset)
+
+# There are 53 words with that end with ing in the dataset
+
+sentences_tbl_2 %>%
+  mutate(count_ing = str_count(value, "ing")) %>%
+  summarise(count = sum(count_ing))
+# create a column to count the words that contain ing, and then count these 
+# (not added to dataset)
+
+# There are 64 words with that contain ing in the dataset
+```
+
+## 3. A dummy variable equal to 1 if the sentence contain a color such as red, orange, yellow, green, blue, purple, pink and 0 otherwise. Take advantage of the paste0 function to answer this question (see slides). Pay attention not to have a too permissive pattern! How many sentences contain colors?
+
+```{r}
+color <- c(" red ", " red.", "Red ", " orange ", " orange.", "Orange ", " yellow ", " yellow.", "Yellow ",
+          " green ", " green.", "Green ", " blue ", " blue.", "Blue ", " purple ", " purple.", "Purple ",
+          " pink ", " pink.", "Pink ", " gold ", " gold.", "Gold ", " white ", " white.", "White ",
+          " black ", " black.", "Black")
+
+# identify every possible combination of colors that may appear
+# I specify that the colors can either have a space after them / be capitalized 
+# with a space after them for the middle or end of a sentence. 
+# Or, they can have a space before and a period for the end of the sentence
+#This prevents words containing the color words (ex: ordered contains 'red') from being included
+
+search <- paste0(color, collapse = "|")
+# use a paste0 with collapse as | as to indicate 'or' for all colors 
+ 
+sentences_tbl_3 <- sentences_tbl_2 %>%
+  mutate(color = ifelse(str_detect(value, search), 1, 0))
+# use ifelse with a str_detect to search for the color words in the value column
+# return a 1 if they are included and a 0 if nor in a new column, color
+
+sentences_tbl_3
+
+sentences_tbl_3 %>%
+  summarise(count = sum(color))
+# create a column to count the sentences that contain color words 
+# (not added to dataset)
+
+# 53 sentences
+```
+
+## 4. The number of words in each sentence. This requires a bit of creativity and there are likely multiple solutions! Give it a fair try but it won’t negatively affect your grade if you cannot figure it out :)
+
+```{r}
+sentences_tbl_4 <- sentences_tbl_3 %>%
+  mutate(word_count = sapply(strsplit(value, " "), length))
+
+# use strsplit on the value column with a split of " " and a function of length 
+# within a sapply to count the amount of words in each sentences 
+# add it to a new column called word_count
+
+sentences_tbl_4
+```
+
+
