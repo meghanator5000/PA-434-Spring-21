@@ -1,0 +1,214 @@
+---
+title: "434 Homework 10"
+author: "Meghan Mokate"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r warning = F, message = F, echo = TRUE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Install necessary packages
+```{r warning = F, message = F, results = 'hide'}
+library(tidyverse) # will use this later for if_else and for pipes
+```
+
+## 1. Write a loop that iterates over the numbers 1 to 10 and adds 5 to each of them before storing the results in a new vector called output.
+
+1. I define the output as a vector, its type, and how many values it will contain
+2. I instruct the for loop to go through values 1 through 10
+3. I instruct the loop to populate output with the value with 5 added to it
+4. I view my output and the vector looks how I intended it to
+```{r}
+output <- vector("numeric", 10) 
+
+for (i in 1:10){ 
+  output[[i]] <- i+5 
+}
+
+output 
+```
+
+## 2. Create the matrix mat_x below and perform the following operations:
+### a. Make a for-loop that calculates the sum for each column of the matrix
+
+1. I create a matrix that fits the instructions, that will fill 20 rows and 6 columns with the values 1:120
+2. I define the output as a numeric value with the same amount of columns of mat_x
+3. I create the for loop to go through the number of columns in mat_x and output the sum of the columns into output_1
+4. I view output_1 and it returns the values I expected
+
+```{r}
+mat_x <- matrix(1:120, nrow = 20, ncol = 6)  
+
+# 2a
+output_1 <- numeric(ncol(mat_x)) 
+
+for (i in seq(ncol(mat_x))) { 
+  output_1[[i]] <- sum(mat_x[, i])
+}
+output_1
+```
+
+### b. Use the apply function to perform the same operation
+1. I use the apply function to repeat the same operation as I performed with my for loop. I specify the matrix I am using, use "2" to indicate that I want to look at columns, and specify that I would like to take a sum.
+2. I decide to assign it to an output value and then view this output, and it looks the same as 2a
+3. I find this method to be much more straightforward than the for loop!
+
+```{r}
+# 2b
+output_app <- apply(mat_x, 2, sum)
+output_app
+
+```
+
+## 3. Create a data frame with two numeric and one character vector. Write a loop that loops over the columns and reports the mean of the column if it is numeric and the number of observations if it’s a character vector.
+
+1. I create a data frame that fits the requirements from the vectors I created - two numeric and one character. 
+2. I define the output as a vector
+3. I create the for loop to go through the number of columns in df, I include an ifelse to output the mean if the "is.numeric" requirement is met and, if not, then the output should return the number or rows (observations)
+4. I view output_2 and it returns the values I expected
+
+```{r}
+v1 <- 1:15
+v2 <- c(letters[1:15])
+v3 <- rnorm(15, sd = 15)
+
+df <- data.frame(v1, v2, v3, stringsAsFactors = FALSE)
+
+output_2 <- vector()
+
+for (i in seq_along(df)) {
+  ifelse(is.numeric(df[[i]]), 
+         output_2[[i]] <- mean(df[[i]]),
+         output_2[[i]] <- nrow(df))
+}
+
+output_2
+
+```
+
+## 4. Using a loop, generate 10 random normals from distributions with means of -10, 0, 10, and 100. Store them in a new matrix called mat_distributions.
+
+1. I first population a variable "m" with the target means
+2. I define the matrix to have 10 rows and 4 columns (one for each of the target means)
+3. I create the for loop to go through the columns of m to generate random normals to be outputted to the matrix; I specify that the number of observations is 10 and set the mean to the m variable to iterate through
+4. I view my output and it is what I wanted
+
+```{r}
+
+m <- c(-10, 0, 10, 100)
+
+mat_distributions <- matrix(nrow = 10, ncol = 4)
+
+for (i in seq_along(m)) { # had to try a couple of different 
+  #"ins" here until one worked best for how I intended
+  mat_distributions[,i] <- rnorm(n = 10, mean = m[[i]]) # originally had mat_distributions[[i]] (NAs), 
+  #then tried mat_distributions[i] (NAs), then finally used [,i] and it worked
+}
+
+mat_distributions
+
+```
+
+## 5. Use a simple ‘ifelse’ statement to add a new column ‘male.teen’ to the data frame. This is a dummy variable, indicating 1 if the observation is a male younger than 20 years and 0 otherwise
+
+1. I create a dataframe with columns and values for name, sex, and years
+2. I use the dollar sign syntax to create a new variable of male.teen in the respondent.df dataframe
+3. I use ifelse to specify the parameters as sex is "m" and years is < 20, then assign a value of 1 when these are met and 0 when they are not
+4. I view my updated dataframe and it is what I wanted
+
+```{r}
+respondent.df = data.frame(name = c("Sue", "Eva", "Henry", "Jan", "Mary", "John"),
+sex = c("f", "f", "m", "m", "f", "m"),
+years = c(21,31,29,19, 23, 33))
+
+respondent.df$male.teen <- ifelse(respondent.df$sex == 'm' & respondent.df$years < 20, 1, 0)
+
+respondent.df
+```
+
+## 6. Using the same respondent.df dataset, create a new column where values greater than 30 in the column year are coded as NA. Other values should stay the same Use both ifelse and if_else.
+
+1. I use the same process as above for ifelse
+2. I use almost exactly the same process as above for if_else, except that I need to specify that NA is a numeric value otherwise if_else returns and error because it is strict with class types
+3. I view my updated dataframe and it is what I wanted
+
+```{r}
+
+respondent.df$new.age <- ifelse(respondent.df$years < 30, NA, respondent.df$years)
+
+respondent.df$new_age <- if_else(respondent.df$years < 30, as.numeric(NA), respondent.df$years)
+
+respondent.df
+
+```
+
+## 7. Use tapply to calculate the average, minimum, and maximum number of years for female and male respondents.
+
+1. I use tapply to specify conditions when I want the tasks to be performed
+2. I assign the column "years" as the object to apply the function to
+3. I assign the column "sex" as the factor specifying the condition
+4. I create the function to take the mean, min, and max of "x", in this case, years for female and male respondents
+5. The output is what I expected
+
+```{r}
+tapply(respondent.df$years,
+       respondent.df$sex,
+       function(x) c(mean(x, na.rm = T), min(x, na.rm = T), max(x, na.rm = T)))
+```
+## 8. Create a loop that will number the publications for each authors. “Tidy” the data so that each row represents one author only.
+
+1. I create a dataframe that meets the requirements for this question
+2. I use dollar sign syntax to create a new column "PubNum" in the dataframe and specify that the contents of the column will be numeric (a count) and that they will be 8 rows long just like the data column
+3. I create the for loop to go through the number of rows in data
+4. I use an if statement to test if the variable is equal to 1 and, if yes, set the column value equal to 1
+5. If the variable is not equal to 1, then another if function is consulted to test if the author is the same as the value of the row above. If it is, then the value from the row above gets one added to it. If not, keep the variable at one
+6. I view my dataframe and the new column is what I wanted
+7.I tidy the data frame in data_1 by pivoting wider from my new added column and I use select to order these columns in a logical way
+8. I view my dataframe and it is what I wanted
+
+
+```{r}
+
+author = c("Author1", "Author1",
+           "Author2", "Author3", "Author3",
+           "Author3", "Author4", "Author5")
+
+pub = c("Pub1", "Pub2", "Pub3", "Pub4",
+        "Pub5", "Pub6", "Pub7", "Pub8")
+
+type = c("preprint", "article", "preprint",
+         "article", "article", "preprint", "preprint", "article")
+
+data = as_tibble(cbind(author, pub, type))
+
+data$PubNum <- vector("numeric", 8) 
+
+for (i in seq(nrow(data))) {
+  if (i == 1) {
+    data$PubNum[i] <- 1
+  } else {
+    if (data$author[i] == data$author[(i - 1)]) {
+      data$PubNum[i] <- data$PubNum[(i-1)] + 1
+    } else {
+        data$PubNum[i] <- 1
+    }
+  }
+}
+data
+
+data_1 <- data %>%
+  pivot_wider(names_from = c("PubNum"), 
+              names_sep = "",
+              values_from = c("pub", "type")) %>%
+  select(1, 2, 5, 3, 6, 4, 7)
+  
+data_1
+
+```
+
+
