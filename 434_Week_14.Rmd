@@ -1,0 +1,132 @@
+---
+title: "HW_434_14"
+author: "Meghan Mokate"
+date: "4/21/2021"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import libraries
+
+```{r, echo = FALSE, include=FALSE}
+library(tidyverse) # Our usual package
+library("kableExtra") # Making cool tables in R
+library("stevedata") # Some data from Steve...
+```
+
+## Load data
+```{r}
+data <- gss_wages
+```
+
+## Select only columns and rows that we need for our analysis
+
+For our analysis, we only need the columns: year, realrinc, childs, and gender.
+
+I also filter so that I only look at years 1998 through 2018 (given in two year increments).
+```{r}
+data_1 <- data %>%
+  select(year, realrinc, childs, gender) %>%
+  filter(year %in% (1998:2018)) 
+```
+
+## Select only columns and rows that we need for our analysis
+
+Create columns for the following:
+
+1. Average income for females
+2. Average income for males
+3. Number of children for females
+4. Number of children for males
+5. Difference in income
+6. Difference in number of children
+
+I also order these rows to group male, female, and difference
+```{r, warning=FALSE}
+table <- data_1 %>%
+  group_by(year, gender) %>%
+  summarize(avg_inc = mean(realrinc, na.rm = T),
+         avg_child = mean (childs, na.rm = T)) %>%
+  pivot_wider(names_from = gender,
+              values_from = c(avg_inc, avg_child)) %>%
+  mutate(inc_diff = avg_inc_Male - avg_inc_Female,
+         child_diff = avg_child_Male - avg_child_Female) %>%
+  select(year, 
+         avg_inc_Male, avg_child_Male, 
+         avg_inc_Female, avg_child_Female,
+         inc_diff, child_diff)
+table
+```
+
+## Format Table
+
+I make the following changes to the table:
+
+1. Change year to character
+2. Create column for income change (to work with later)
+3. Change the column names, with Year including a note (referenced later)
+4. Right align all columns
+5. Give the table a title
+6. Specify digits for each column value
+7. Add commas to numbers
+8. Change font size and style
+9. Make the column names have a light gray background
+10. Give the syle a "hover" type
+11. Add a header above to group columns for male, female, and the difference between the two for each group's income and number of children
+12. Create a before and after crisis divider for the rows, with after crisis including a footnote
+13. Color grouped columns to demonstrate they are separate
+14. Italicize 2008 data since it stands out with big numbers and big differences
+15. Change biggest difference value colors to red and smallest to green
+16. Bold year values column
+17. Add in footnotes
+18. Add in pictures for increase / decrease
+
+```{r, warning=FALSE}
+t_format <- table %>%
+  mutate(year = as.character(year)) %>%
+  mutate("Income Change" = " ") %>%
+  kbl(col.names = c("Year[note]", "Income", "Children",
+                      "Income", "Children",
+                      "Income", "Children", "Income Change"),
+    align = "rrrrrrr",
+    caption = "Average Income and # Children by by Gender 1998-2018",
+    digits = c(0, 2, 2, 2, 2, 2, 2),
+    format.args = list(big.mark = ",")) %>%
+    kable_styling(font_size = 20,
+                  html_font = "Arial",
+                  full_width = F) %>%
+  row_spec(0, bold = T, background = "#778899") %>%
+  kable_material(c("hover")) %>%
+  add_header_above(c(" " = 1, "Male" = 2,
+                     "Female" = 2, "Difference" = 2, " " = 1)) %>% 
+  group_rows("Before crisis", 1, 6, label_row_css = "background-color: #C0C0C0	") %>% 
+  column_spec(2, background = c(rep("black", 0), "aliceblue", rep("black", 0)), rep(F, 0)) %>%
+  column_spec(3, background = c(rep("black", 0), "aliceblue", rep("black", 0)), rep(F, 0)) %>%
+  column_spec(4, background = c(rep("black", 0), "mistyrose", rep("black", 0)), rep(F, 0)) %>%
+  column_spec(5, background = c(rep("black", 0), "mistyrose", rep("black", 0)), rep(F, 0)) %>%
+  column_spec(6, background = c(rep("black", 0), "papayawhip", rep("black", 0)), rep(F, 0)) %>%
+  column_spec(7, background = c(rep("black", 0), "papayawhip", rep("black", 0)), rep(F, 0)) %>%
+  row_spec(6, italic = T) %>%
+  column_spec(6, color = c(rep("black", 5), "red", "green", rep("black", 6))) %>%
+  column_spec(7, color = c(rep("black", 6), "green", "red", rep("black", 8))) %>%
+  column_spec(1, bold = T) %>%
+  group_rows("After crisis[note]", 7, 11, label_row_css = "background-color: #C0C0C0") %>%
+  add_footnote(c("Only includes 1998 through 2018", "We consider the end of crisis after 2009")) %>%
+  column_spec(8, image = c('/Users/meghanmokate/Desktop/Spring%2021/both_dirs.png', 
+                           '/Users/meghanmokate/Desktop/Spring%2021/up_arrow.png',
+                           '/Users/meghanmokate/Desktop/Spring%2021/up_arrow.png',
+                           "/Users/meghanmokate/Desktop/Spring%2021/down_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/down_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/up_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/down_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/up_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/down_arrow.png",
+                           "/Users/meghanmokate/Desktop/Spring%2021/down_arrow.png",
+                           '/Users/meghanmokate/Desktop/Spring%2021/up_arrow.png'))
+t_format
+```
+
